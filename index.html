@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiGAP BIMA</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f3f4f6; text-align: center; }
+        #loading { font-size: 1.2rem; font-weight: bold; color: #374151; }
+        #error-message { display: none; background: #fee2e2; border: 1px solid #ef4444; padding: 20px; border-radius: 8px; max-width: 400px; }
+        #error-message h2 { color: #b91c1c; margin-top: 0; }
+        #error-message p { color: #7f1d1d; }
+        button { background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background-color: #dc2626; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">Memeriksa Izin Kamera dan GPS...</div>
+    
+    <div id="error-message">
+        <h2>Akses Ditolak!</h2>
+        <p>Aplikasi SiGAP BIMA mewajibkan akses <b>Kamera</b> dan <b>Lokasi (GPS)</b>. Silakan izinkan akses pada pengaturan browser Anda dan coba lagi.</p>
+        <button onclick="location.reload()">Muat Ulang Halaman</button>
+    </div>
+
+    <div id="app-container"></div>
+
+    <script>
+        // Fungsi utama untuk mengecek dan meminta izin
+        async function checkPermissionsAndLoadApp() {
+            try {
+                // 1. Meminta Izin Kamera
+                const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // Hentikan stream di parent agar kamera bisa digunakan sepenuhnya oleh iframe nanti
+                cameraStream.getTracks().forEach(track => track.stop());
+
+                // 2. Meminta Izin Lokasi (GPS)
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Jika GPS diizinkan, muat iframe
+                        loadIframe();
+                    },
+                    (error) => {
+                        // Jika GPS ditolak atau terjadi error
+                        showError();
+                    },
+                    { enableHighAccuracy: true } // Memaksa akurasi tinggi
+                );
+            } catch (err) {
+                // Jika Kamera ditolak atau perangkat tidak memiliki kamera
+                showError();
+            }
+        }
+
+        // Fungsi untuk merender iframe jika semua izin diberikan
+        function loadIframe() {
+            document.getElementById('loading').style.display = 'none';
+            const container = document.getElementById('app-container');
+            
+            // Perhatikan penambahan 'geolocation *' pada atribut allow
+            container.innerHTML = `
+                <iframe 
+                    allow="camera *; geolocation *; microphone *" 
+                    src="https://script.google.com/macros/s/AKfycbw65tJCc7008Xn3uu5K0zXmGrZ1z7oq_xtm_Kq919PGnU0cvlItNQ-e-mG2NZRecpp7-g/exec" 
+                    style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;"
+                >Your browser doesn't support iframes</iframe>
+            `;
+        }
+
+        // Fungsi untuk menampilkan pesan error
+        function showError() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-message').style.display = 'block';
+        }
+
+        // Jalankan fungsi saat halaman web pertama kali dimuat
+        window.onload = checkPermissionsAndLoadApp;
+    </script>
+</body>
+</html>
